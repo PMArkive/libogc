@@ -70,14 +70,13 @@ static ssize_t __uart_stdio_write(struct _reent *r, void *fd, const char *ptr, s
 		size_t buflen = len;
 		if (buflen > __outsz) buflen = __outsz;
 		left -= buflen;
-		while(buflen>0) {
+		for(int i = 0; i < buflen; i++) {
 			char ch = *p++;
 			if(ch=='\r' && *p == '\n') continue;
 			if (ch=='\n') ch = '\r';
 			*buf++ = ch;
-			buflen--;
 		}
-		__uart_write(__outstr,len);
+		__uart_write(__outstr, buflen);
 	}
 	return len;
 }
@@ -107,11 +106,11 @@ void SYS_Report (char const *const fmt_, ...)
 
 	va_list args;
 
+	memset(__outstr, 0, __outsz);
 	va_start(args, fmt_);
-	len=vsnprintf(__outstr,256,fmt_,args);
+	len=vsnprintf(__outstr,__outsz,fmt_,args);
 	va_end(args);
 
-	__uart_stdio_write(NULL, 0, __outstr, len);
-
+	__uart_stdio_write(NULL, 0, __outstr, len > __outsz ? (__outsz -1) : len);
 }
 
